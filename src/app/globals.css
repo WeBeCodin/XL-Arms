@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #0a0a0a;
+  --color-foreground: #ededed;
+  --color-primary: #f59e0b;
+  --color-secondary: #d97706;
+  --color-accent: #fbbf24;
+  
+  --font-family-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+  --font-family-heading: 'Teko', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Define font utilities */
+.font-heading {
+  font-family: var(--font-family-heading);
+}
+
+.font-roboto {
+  font-family: var(--font-family-sans);
+}
+
+/* Custom animations and effects */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.animate-fade-in-left {
+  animation: fadeInLeft 0.8s ease-out;
+}
+
+.animate-fade-in-right {
+  animation: fadeInRight 0.8s ease-out;
+}
+
+/* Custom button styles */
+.btn-primary {
+  @apply bg-amber-500 hover:bg-amber-600 text-black font-semibold px-6 py-3 rounded-lg transition-all duration-300;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  @apply border-2 border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-black font-semibold px-6 py-3 rounded-lg transition-all duration-300;
+}
+
+.btn-secondary:hover {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Reveal animations for scroll */
+.reveal {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.8s ease;
+}
+
+.reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-family-sans);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-heading);
+}
