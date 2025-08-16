@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 export default function Home() {
   const [scrollY, setScrollY] = useState(0);
@@ -30,9 +31,16 @@ export default function Home() {
       {/* Header */}
       <header className="fixed top-0 w-full z-50 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800">
         <nav className="container mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
-              <span className="text-black font-bold text-xl font-heading">XL</span>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 relative">
+              <Image
+                src="https://framerusercontent.com/images/oDelAjyhQfA09s6DmZo7EX3xlI.svg"
+                alt="XL Arms Logo"
+                width={40}
+                height={40}
+                className="object-contain"
+                priority
+              />
             </div>
             <h1 className="text-2xl font-heading font-bold text-white">XL Arms</h1>
           </div>
@@ -57,11 +65,20 @@ export default function Home() {
       {/* Hero Section */}
       <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div 
-          className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black"
+          className="absolute inset-0"
           style={{
-            transform: `translateY(${scrollY * 0.5}px)`,
+            transform: `translateY(${scrollY * 0.3}px)`,
           }}
-        />
+        >
+          <Image
+            src="https://framerusercontent.com/images/BwwEahcQNOQ0rC5i1b3jOXMjjG8.png"
+            alt="XL Arms Professional Firearms Services Background"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/60" />
+        </div>
         
         <div className="relative z-10 text-center max-w-4xl mx-auto px-6">
           <h1 className="text-6xl md:text-8xl font-heading font-bold mb-6 animate-fade-in-up">
@@ -146,10 +163,14 @@ export default function Home() {
             
             <div className="grid md:grid-cols-3 gap-8">
               <div className="bg-gray-800 p-8 rounded-lg border border-gray-700 reveal hover:border-amber-500 transition-all duration-300">
-                <div className="w-16 h-16 bg-amber-500 rounded-lg flex items-center justify-center mb-6">
-                  <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
+                <div className="w-16 h-16 mb-6 relative">
+                  <Image
+                    src="https://imgur.com/7hT0i1o.png"
+                    alt="Secure Gun Locker Storage"
+                    width={64}
+                    height={64}
+                    className="object-cover rounded-lg"
+                  />
                 </div>
                 <h3 className="text-xl font-heading font-bold mb-4">Secure Storage</h3>
                 <p className="text-gray-300">
@@ -236,7 +257,15 @@ export default function Home() {
               </div>
               
               <div className="reveal">
-                <div className="bg-gray-900 p-8 rounded-lg border border-gray-700">
+                <div className="relative h-80 rounded-lg overflow-hidden mb-6">
+                  <Image
+                    src="https://framerusercontent.com/images/jMrjN7uwAHKVHt3fzUpHAwDlnNc.png"
+                    alt="Professional Firearm Transfer Services"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="bg-gray-900 p-6 rounded-lg border border-gray-700">
                   <h4 className="text-xl font-heading font-bold mb-4 text-amber-400">Transfer Fees</h4>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center border-b border-gray-600 pb-2">
@@ -274,6 +303,15 @@ export default function Home() {
             <div className="grid md:grid-cols-4 gap-6 mb-12">
               <div className="reveal">
                 <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
+                  <div className="w-16 h-16 mb-4 relative">
+                    <Image
+                      src="https://framerusercontent.com/images/TqQlmcOTkKrwidFAWxb7quoyQ.png?scale-down-to=512"
+                      alt="Licensed Dealer"
+                      width={64}
+                      height={64}
+                      className="object-cover rounded-lg"
+                    />
+                  </div>
                   <div className="text-3xl font-heading font-bold text-amber-400 mb-2">01</div>
                   <h3 className="font-heading font-bold mb-2">Licensed Dealer</h3>
                   <p className="text-gray-300 text-sm">Fully licensed Federal Firearms Dealer</p>
@@ -282,6 +320,15 @@ export default function Home() {
               
               <div className="reveal">
                 <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
+                  <div className="w-16 h-16 mb-4 relative">
+                    <Image
+                      src="https://framerusercontent.com/images/h2SNAYN60I1gXAAJQgBtfw0a8EI.png?scale-down-to=512"
+                      alt="Background Check Process"
+                      width={64}
+                      height={64}
+                      className="object-cover rounded-lg"
+                    />
+                  </div>
                   <div className="text-3xl font-heading font-bold text-amber-400 mb-2">02</div>
                   <h3 className="font-heading font-bold mb-2">Background Checks</h3>
                   <p className="text-gray-300 text-sm">NICS background check processing</p>
@@ -290,6 +337,15 @@ export default function Home() {
               
               <div className="reveal">
                 <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
+                  <div className="w-16 h-16 mb-4 relative">
+                    <Image
+                      src="https://framerusercontent.com/images/ktCjinby6A2fnPK48y9MdTERv1M.png?scale-down-to=512"
+                      alt="Documentation Management"
+                      width={64}
+                      height={64}
+                      className="object-cover rounded-lg"
+                    />
+                  </div>
                   <div className="text-3xl font-heading font-bold text-amber-400 mb-2">03</div>
                   <h3 className="font-heading font-bold mb-2">Documentation</h3>
                   <p className="text-gray-300 text-sm">Complete paperwork and record keeping</p>
@@ -298,6 +354,15 @@ export default function Home() {
               
               <div className="reveal">
                 <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
+                  <div className="w-16 h-16 mb-4 relative">
+                    <Image
+                      src="https://framerusercontent.com/images/iyxEBWK0QXTQiwmkWQnpdM1Us.png"
+                      alt="Compliance Verification"
+                      width={64}
+                      height={64}
+                      className="object-cover rounded-lg"
+                    />
+                  </div>
                   <div className="text-3xl font-heading font-bold text-amber-400 mb-2">04</div>
                   <h3 className="font-heading font-bold mb-2">Compliance</h3>
                   <p className="text-gray-300 text-sm">Full federal and state compliance</p>
@@ -306,13 +371,25 @@ export default function Home() {
             </div>
             
             <div className="reveal">
-              <h3 className="text-2xl font-heading font-bold mb-6">Why Choose Our FFL Services?</h3>
-              <p className="text-lg text-gray-300 max-w-3xl mx-auto mb-8">
-                Our FFL services provide peace of mind with professional handling, 
-                complete compliance, and exceptional customer service. We make the 
-                transfer process smooth and straightforward.
-              </p>
-              <button className="btn-primary">Contact Us</button>
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div>
+                  <h3 className="text-2xl font-heading font-bold mb-6">Why Choose Our FFL Services?</h3>
+                  <p className="text-lg text-gray-300 mb-6">
+                    Our FFL services provide peace of mind with professional handling, 
+                    complete compliance, and exceptional customer service. We make the 
+                    transfer process smooth and straightforward.
+                  </p>
+                  <button className="btn-primary">Contact Us</button>
+                </div>
+                <div className="relative h-64 rounded-lg overflow-hidden">
+                  <Image
+                    src="https://framerusercontent.com/images/jF8fdJjrul8wqU4s3VSkpPORxYE.png"
+                    alt="FFL Services Professional Setup"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -323,9 +400,15 @@ export default function Home() {
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
-                  <span className="text-black font-bold text-lg font-heading">XL</span>
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-8 h-8 relative">
+                  <Image
+                    src="https://framerusercontent.com/images/oDelAjyhQfA09s6DmZo7EX3xlI.svg"
+                    alt="XL Arms Logo"
+                    width={32}
+                    height={32}
+                    className="object-contain"
+                  />
                 </div>
                 <h3 className="text-xl font-heading font-bold">XL Arms</h3>
               </div>
