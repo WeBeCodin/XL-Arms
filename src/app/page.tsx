@@ -293,102 +293,129 @@ export default function Home() {
       </section>
 
       {/* FFL Transfers Section */}
-      <section id="ffl" className="py-20 bg-gray-900">
+      <section id="ffl" className="py-20 bg-gray-900 relative">
         <div className="container mx-auto px-6">
-          <div className="max-w-6xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-heading font-bold mb-12 reveal">
-              FFL <span className="text-amber-400">Services</span>
-            </h2>
-            
-            <div className="grid md:grid-cols-4 gap-6 mb-12">
-              <div className="reveal">
-                <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
-                  <div className="w-16 h-16 mb-4 relative">
-                    <Image
-                      src="https://framerusercontent.com/images/TqQlmcOTkKrwidFAWxb7quoyQ.png?scale-down-to=512"
-                      alt="Licensed Dealer"
-                      width={64}
-                      height={64}
-                      className="object-cover rounded-lg"
-                    />
+          <div className="max-w-6xl mx-auto text-center relative">
+            {/* Grayed out content */}
+            <div className="filter grayscale opacity-30">
+              <h2 className="text-4xl md:text-5xl font-heading font-bold mb-12 reveal">
+                FFL <span className="text-amber-400">Services</span>
+              </h2>
+              
+              <div className="grid md:grid-cols-4 gap-6 mb-12">
+                <div className="reveal">
+                  <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
+                    <div className="w-16 h-16 mb-4 relative">
+                      <Image
+                        src="https://framerusercontent.com/images/TqQlmcOTkKrwidFAWxb7quoyQ.png?scale-down-to=512"
+                        alt="Licensed Dealer"
+                        width={64}
+                        height={64}
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
+                    <div className="text-3xl font-heading font-bold text-amber-400 mb-2">01</div>
+                    <h3 className="font-heading font-bold mb-2">Licensed Dealer</h3>
+                    <p className="text-gray-300 text-sm">Fully licensed Federal Firearms Dealer</p>
                   </div>
-                  <div className="text-3xl font-heading font-bold text-amber-400 mb-2">01</div>
-                  <h3 className="font-heading font-bold mb-2">Licensed Dealer</h3>
-                  <p className="text-gray-300 text-sm">Fully licensed Federal Firearms Dealer</p>
+                </div>
+                
+                <div className="reveal">
+                  <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
+                    <div className="w-16 h-16 mb-4 relative">
+                      <Image
+                        src="https://framerusercontent.com/images/h2SNAYN60I1gXAAJQgBtfw0a8EI.png?scale-down-to=512"
+                        alt="Background Check Process"
+                        width={64}
+                        height={64}
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
+                    <div className="text-3xl font-heading font-bold text-amber-400 mb-2">02</div>
+                    <h3 className="font-heading font-bold mb-2">Background Checks</h3>
+                    <p className="text-gray-300 text-sm">NICS background check processing</p>
+                  </div>
+                </div>
+                
+                <div className="reveal">
+                  <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
+                    <div className="w-16 h-16 mb-4 relative">
+                      <Image
+                        src="https://framerusercontent.com/images/ktCjinby6A2fnPK48y9MdTERv1M.png?scale-down-to=512"
+                        alt="Documentation Management"
+                        width={64}
+                        height={64}
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
+                    <div className="text-3xl font-heading font-bold text-amber-400 mb-2">03</div>
+                    <h3 className="font-heading font-bold mb-2">Documentation</h3>
+                    <p className="text-gray-300 text-sm">Complete paperwork and record keeping</p>
+                  </div>
+                </div>
+                
+                <div className="reveal">
+                  <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
+                    <div className="w-16 h-16 mb-4 relative">
+                      <Image
+                        src="https://framerusercontent.com/images/iyxEBWK0QXTQiwmkWQnpdM1Us.png"
+                        alt="Compliance Verification"
+                        width={64}
+                        height={64}
+                        className="object-cover rounded-lg"
+                      />
+                    </div>
+                    <div className="text-3xl font-heading font-bold text-amber-400 mb-2">04</div>
+                    <h3 className="font-heading font-bold mb-2">Compliance</h3>
+                    <p className="text-gray-300 text-sm">Full federal and state compliance</p>
+                  </div>
                 </div>
               </div>
               
               <div className="reveal">
-                <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
-                  <div className="w-16 h-16 mb-4 relative">
+                <div className="grid md:grid-cols-2 gap-8 items-center">
+                  <div>
+                    <h3 className="text-2xl font-heading font-bold mb-6">Why Choose Our FFL Services?</h3>
+                    <p className="text-lg text-gray-300 mb-6">
+                      Our FFL services provide peace of mind with professional handling, 
+                      complete compliance, and exceptional customer service. We make the 
+                      transfer process smooth and straightforward.
+                    </p>
+                    <button className="btn-primary">Contact Us</button>
+                  </div>
+                  <div className="relative h-64 rounded-lg overflow-hidden">
                     <Image
-                      src="https://framerusercontent.com/images/h2SNAYN60I1gXAAJQgBtfw0a8EI.png?scale-down-to=512"
-                      alt="Background Check Process"
-                      width={64}
-                      height={64}
-                      className="object-cover rounded-lg"
+                      src="https://framerusercontent.com/images/jF8fdJjrul8wqU4s3VSkpPORxYE.png"
+                      alt="FFL Services Professional Setup"
+                      fill
+                      className="object-cover"
                     />
                   </div>
-                  <div className="text-3xl font-heading font-bold text-amber-400 mb-2">02</div>
-                  <h3 className="font-heading font-bold mb-2">Background Checks</h3>
-                  <p className="text-gray-300 text-sm">NICS background check processing</p>
-                </div>
-              </div>
-              
-              <div className="reveal">
-                <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
-                  <div className="w-16 h-16 mb-4 relative">
-                    <Image
-                      src="https://framerusercontent.com/images/ktCjinby6A2fnPK48y9MdTERv1M.png?scale-down-to=512"
-                      alt="Documentation Management"
-                      width={64}
-                      height={64}
-                      className="object-cover rounded-lg"
-                    />
-                  </div>
-                  <div className="text-3xl font-heading font-bold text-amber-400 mb-2">03</div>
-                  <h3 className="font-heading font-bold mb-2">Documentation</h3>
-                  <p className="text-gray-300 text-sm">Complete paperwork and record keeping</p>
-                </div>
-              </div>
-              
-              <div className="reveal">
-                <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 hover:border-amber-500 transition-all duration-300">
-                  <div className="w-16 h-16 mb-4 relative">
-                    <Image
-                      src="https://framerusercontent.com/images/iyxEBWK0QXTQiwmkWQnpdM1Us.png"
-                      alt="Compliance Verification"
-                      width={64}
-                      height={64}
-                      className="object-cover rounded-lg"
-                    />
-                  </div>
-                  <div className="text-3xl font-heading font-bold text-amber-400 mb-2">04</div>
-                  <h3 className="font-heading font-bold mb-2">Compliance</h3>
-                  <p className="text-gray-300 text-sm">Full federal and state compliance</p>
                 </div>
               </div>
             </div>
             
-            <div className="reveal">
-              <div className="grid md:grid-cols-2 gap-8 items-center">
-                <div>
-                  <h3 className="text-2xl font-heading font-bold mb-6">Why Choose Our FFL Services?</h3>
-                  <p className="text-lg text-gray-300 mb-6">
-                    Our FFL services provide peace of mind with professional handling, 
-                    complete compliance, and exceptional customer service. We make the 
-                    transfer process smooth and straightforward.
-                  </p>
-                  <button className="btn-primary">Contact Us</button>
+            {/* Overlay with message */}
+            <div className="absolute inset-0 bg-gray-900/80 flex items-center justify-center z-10">
+              <div className="bg-gray-800/95 backdrop-blur-sm border border-amber-500 rounded-xl p-8 max-w-lg mx-4 text-center shadow-2xl">
+                <div className="w-16 h-16 bg-amber-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
-                <div className="relative h-64 rounded-lg overflow-hidden">
-                  <Image
-                    src="https://framerusercontent.com/images/jF8fdJjrul8wqU4s3VSkpPORxYE.png"
-                    alt="FFL Services Professional Setup"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
+                <h3 className="text-2xl font-heading font-bold text-white mb-4">Service Temporarily Unavailable</h3>
+                <p className="text-gray-300 mb-6 leading-relaxed">
+                  Currently working on new physical location. This service will resume soon. Continue shopping online.
+                </p>
+                <a 
+                  href="#" 
+                  className="inline-flex items-center bg-amber-500 hover:bg-amber-600 text-black font-semibold px-6 py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/25"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                  Shop Online Store
+                </a>
               </div>
             </div>
           </div>
