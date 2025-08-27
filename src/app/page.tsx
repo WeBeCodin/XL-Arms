@@ -47,6 +47,7 @@ export default function Home() {
           
           <div className="hidden md:flex items-center space-x-8">
             <a href="#home" className="hover:text-amber-400 transition-colors">Home</a>
+            <a href="/store" className="hover:text-amber-400 transition-colors">Store</a>
             <a href="#about" className="hover:text-amber-400 transition-colors">About</a>
             <a href="#inventory" className="hover:text-amber-400 transition-colors">Inventory</a>
             <a href="#transfers" className="hover:text-amber-400 transition-colors">Transfers</a>
@@ -408,7 +409,7 @@ export default function Home() {
                   Currently working on new physical location. This service will resume soon. Continue shopping online.
                 </p>
                 <a 
-                  href="#" 
+                  href="/store" 
                   className="inline-flex items-center bg-amber-500 hover:bg-amber-600 text-black font-semibold px-6 py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/25"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
