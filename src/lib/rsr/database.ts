@@ -1,0 +1,409 @@
+import { RSRInventoryItem, RSRProduct } from '../types/rsr';
+import { sql } from '@vercel/postgres';
+import { kv } from '@vercel/kv';
+
+// This is a simplified example. Adapt to your database solution.
+export class RSRDatabase {
+  
+  /**
+   * Save inventory items to Vercel KV (Redis)
+   */
+  async saveToKV(items: RSRInventoryItem[]): Promise<void> {
+    try {
+      console.log(`Saving ${items.length} items to Vercel KV...`);
+      
+      // Save items in batches to avoid memory issues
+      const batchSize = 100;
+      let savedCount = 0;
+      
+      for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize);
+        
+        // Execute batch operations
+        for (const item of batch) {
+          const key = `rsr:inventory:${item.rsrStockNumber}`;
+          await kv.set(key, JSON.stringify(item), { ex: 10800 }); // 3 hours expiration
+        }
+        savedCount += batch.length;
+        
+        console.log(`Saved batch ${Math.ceil((i + batchSize) / batchSize)} - ${savedCount}/${items.length} items`);
+      }
+      
+      // Update metadata
+      await kv.set('rsr:metadata:lastSync', new Date().toISOString());
+      await kv.set('rsr:metadata:itemCount', items.length);
+      
+      console.log(`Successfully saved ${savedCount} items to KV`);
+      
+    } catch (error) {
+      console.error('Failed to save to KV:', error);
+      throw new Error(`KV save failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Save inventory items to Vercel Postgres
+   */
+  async saveToPostgres(items: RSRInventoryItem[]): Promise<void> {
+    try {
+      console.log(`Saving ${items.length} items to Postgres...`);
+      
+      // Create table if it doesn't exist
+      await this.createInventoryTable();
+      
+      // Clear existing data for fresh sync
+      await sql`DELETE FROM rsr_inventory`;
+      
+      // Insert new data in batches
+      const batchSize = 50; // Smaller batch size for SQL inserts
+      let savedCount = 0;
+      
+      for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize);
+        
+        // Prepare values for batch insert
+        const values = batch.map(item => [
+          item.rsrStockNumber,
+          item.upcCode,
+          item.description,
+          item.departmentNumber,
+          item.manufacturerId,
+          item.manufacturerName,
+          item.price,
+          item.retailPrice,
+          item.quantityOnHand,
+          item.weight,
+          item.length,
+          item.width,
+          item.height,
+          item.imageUrl,
+          item.category,
+          item.subcategory,
+          item.model,
+          item.caliber,
+          item.capacity,
+          item.action,
+          item.barrelLength,
+          item.finish,
+          item.stock,
+          item.sights,
+          item.safetyFeatures,
+          item.accessories,
+          item.warranty,
+          item.countryOfOrigin,
+          item.federalExciseTax,
+          item.shippingWeight,
+          item.shippingLength,
+          item.shippingWidth,
+          item.shippingHeight,
+          item.hazmat,
+          item.freeShipping,
+          item.dropShip,
+          item.allocation,
+          item.newItem,
+          item.closeout,
+          new Date().toISOString(),
+        ]);
+        
+        // Execute individual inserts for each item in the batch
+        for (const valueSet of values) {
+          await sql`
+            INSERT INTO rsr_inventory (
+              rsr_stock_number, upc_code, description, department_number, manufacturer_id,
+              manufacturer_name, price, retail_price, quantity_on_hand, weight,
+              length, width, height, image_url, category, subcategory, model, caliber,
+              capacity, action, barrel_length, finish, stock, sights, safety_features,
+              accessories, warranty, country_of_origin, federal_excise_tax, shipping_weight,
+              shipping_length, shipping_width, shipping_height, hazmat, free_shipping,
+              drop_ship, allocation, new_item, closeout, last_updated
+            )
+            VALUES (
+              ${valueSet[0]}, ${valueSet[1]}, ${valueSet[2]}, ${valueSet[3]}, ${valueSet[4]},
+              ${valueSet[5]}, ${valueSet[6]}, ${valueSet[7]}, ${valueSet[8]}, ${valueSet[9]},
+              ${valueSet[10]}, ${valueSet[11]}, ${valueSet[12]}, ${valueSet[13]}, ${valueSet[14]},
+              ${valueSet[15]}, ${valueSet[16]}, ${valueSet[17]}, ${valueSet[18]}, ${valueSet[19]},
+              ${valueSet[20]}, ${valueSet[21]}, ${valueSet[22]}, ${valueSet[23]}, ${valueSet[24]},
+              ${valueSet[25]}, ${valueSet[26]}, ${valueSet[27]}, ${valueSet[28]}, ${valueSet[29]},
+              ${valueSet[30]}, ${valueSet[31]}, ${valueSet[32]}, ${valueSet[33]}, ${valueSet[34]},
+              ${valueSet[35]}, ${valueSet[36]}, ${valueSet[37]}, ${valueSet[38]}, ${valueSet[39]}
+            )
+          `;
+        }
+        
+        savedCount += batch.length;
+        console.log(`Saved batch ${Math.ceil((i + batchSize) / batchSize)} - ${savedCount}/${items.length} items`);
+      }
+      
+      // Update sync metadata
+      await this.updateSyncMetadata(items.length);
+      
+      console.log(`Successfully saved ${savedCount} items to Postgres`);
+      
+    } catch (error) {
+      console.error('Failed to save to Postgres:', error);
+      throw new Error(`Postgres save failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get products from KV with pagination
+   */
+  async getProductsFromKV(page: number = 1, pageSize: number = 50): Promise<RSRProduct[]> {
+    try {
+      // Get all inventory keys
+      const keys = await kv.keys('rsr:inventory:*');
+      
+      // Calculate pagination
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      const paginatedKeys = keys.slice(startIndex, endIndex);
+      
+      // Get items for this page
+      const items = await kv.mget(...paginatedKeys);
+      
+      return items
+        .filter(item => item !== null)
+        .map(item => JSON.parse(item as string) as RSRProduct);
+        
+    } catch (error) {
+      console.error('Failed to get products from KV:', error);
+      throw new Error(`KV read failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get products from Postgres with pagination
+   */
+  async getProductsFromPostgres(page: number = 1, pageSize: number = 50, searchTerm?: string): Promise<{
+    products: RSRProduct[];
+    totalCount: number;
+  }> {
+    try {
+      const offset = (page - 1) * pageSize;
+      
+      // Get total count and paginated results
+      let countResult;
+      let result;
+      
+      if (searchTerm) {
+        const searchPattern = `%${searchTerm}%`;
+        countResult = await sql`
+          SELECT COUNT(*) as count 
+          FROM rsr_inventory 
+          WHERE 
+            description ILIKE ${searchPattern} OR 
+            manufacturer_name ILIKE ${searchPattern} OR
+            model ILIKE ${searchPattern} OR
+            rsr_stock_number ILIKE ${searchPattern}
+        `;
+        
+        result = await sql`
+          SELECT * FROM rsr_inventory 
+          WHERE 
+            description ILIKE ${searchPattern} OR 
+            manufacturer_name ILIKE ${searchPattern} OR
+            model ILIKE ${searchPattern} OR
+            rsr_stock_number ILIKE ${searchPattern}
+          ORDER BY description ASC
+          LIMIT ${pageSize} OFFSET ${offset}
+        `;
+      } else {
+        countResult = await sql`
+          SELECT COUNT(*) as count 
+          FROM rsr_inventory
+        `;
+        
+        result = await sql`
+          SELECT * FROM rsr_inventory 
+          ORDER BY description ASC
+          LIMIT ${pageSize} OFFSET ${offset}
+        `;
+      }
+      
+      const totalCount = parseInt(countResult.rows[0].count);
+      
+      const products: RSRProduct[] = result.rows.map(row => ({
+        rsrStockNumber: row.rsr_stock_number,
+        upcCode: row.upc_code,
+        description: row.description,
+        departmentNumber: row.department_number,
+        manufacturerId: row.manufacturer_id,
+        manufacturerName: row.manufacturer_name,
+        price: parseFloat(row.price),
+        retailPrice: parseFloat(row.retail_price),
+        quantityOnHand: row.quantity_on_hand,
+        weight: parseFloat(row.weight),
+        length: row.length,
+        width: row.width,
+        height: row.height,
+        imageUrl: row.image_url,
+        category: row.category,
+        subcategory: row.subcategory,
+        model: row.model,
+        caliber: row.caliber,
+        capacity: row.capacity,
+        action: row.action,
+        barrelLength: row.barrel_length,
+        finish: row.finish,
+        stock: row.stock,
+        sights: row.sights,
+        safetyFeatures: row.safety_features,
+        accessories: row.accessories,
+        warranty: row.warranty,
+        countryOfOrigin: row.country_of_origin,
+        federalExciseTax: parseFloat(row.federal_excise_tax),
+        shippingWeight: parseFloat(row.shipping_weight),
+        shippingLength: row.shipping_length,
+        shippingWidth: row.shipping_width,
+        shippingHeight: row.shipping_height,
+        hazmat: row.hazmat,
+        freeShipping: row.free_shipping,
+        dropShip: row.drop_ship,
+        allocation: row.allocation,
+        newItem: row.new_item,
+        closeout: row.closeout,
+        lastUpdated: new Date(row.last_updated),
+      }));
+      
+      return { products, totalCount };
+      
+    } catch (error) {
+      console.error('Failed to get products from Postgres:', error);
+      throw new Error(`Postgres read failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Create the inventory table in Postgres
+   */
+  private async createInventoryTable(): Promise<void> {
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS rsr_inventory (
+          id SERIAL PRIMARY KEY,
+          rsr_stock_number VARCHAR(50) UNIQUE NOT NULL,
+          upc_code VARCHAR(20),
+          description TEXT NOT NULL,
+          department_number INTEGER,
+          manufacturer_id VARCHAR(20),
+          manufacturer_name VARCHAR(100),
+          price DECIMAL(10,2),
+          retail_price DECIMAL(10,2),
+          quantity_on_hand INTEGER,
+          weight DECIMAL(8,2),
+          length VARCHAR(20),
+          width VARCHAR(20),
+          height VARCHAR(20),
+          image_url TEXT,
+          category VARCHAR(100),
+          subcategory VARCHAR(100),
+          model VARCHAR(100),
+          caliber VARCHAR(50),
+          capacity INTEGER,
+          action VARCHAR(50),
+          barrel_length VARCHAR(20),
+          finish VARCHAR(100),
+          stock VARCHAR(100),
+          sights VARCHAR(100),
+          safety_features TEXT,
+          accessories TEXT,
+          warranty TEXT,
+          country_of_origin VARCHAR(100),
+          federal_excise_tax DECIMAL(8,2),
+          shipping_weight DECIMAL(8,2),
+          shipping_length VARCHAR(20),
+          shipping_width VARCHAR(20),
+          shipping_height VARCHAR(20),
+          hazmat BOOLEAN DEFAULT FALSE,
+          free_shipping BOOLEAN DEFAULT FALSE,
+          drop_ship BOOLEAN DEFAULT FALSE,
+          allocation BOOLEAN DEFAULT FALSE,
+          new_item BOOLEAN DEFAULT FALSE,
+          closeout BOOLEAN DEFAULT FALSE,
+          last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `;
+      
+      // Create indexes for better performance
+      await sql`CREATE INDEX IF NOT EXISTS idx_rsr_stock_number ON rsr_inventory(rsr_stock_number)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_description ON rsr_inventory(description)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_manufacturer ON rsr_inventory(manufacturer_name)`;
+      await sql`CREATE INDEX IF NOT EXISTS idx_category ON rsr_inventory(category)`;
+      
+    } catch (error) {
+      console.error('Failed to create inventory table:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update sync metadata
+   */
+  private async updateSyncMetadata(itemCount: number): Promise<void> {
+    try {
+      await sql`
+        CREATE TABLE IF NOT EXISTS rsr_sync_metadata (
+          id SERIAL PRIMARY KEY,
+          last_sync TIMESTAMP NOT NULL,
+          item_count INTEGER NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `;
+      
+      await sql`
+        INSERT INTO rsr_sync_metadata (last_sync, item_count)
+        VALUES (CURRENT_TIMESTAMP, ${itemCount})
+      `;
+      
+    } catch (error) {
+      console.error('Failed to update sync metadata:', error);
+    }
+  }
+
+  /**
+   * Get sync status and metadata
+   */
+  async getSyncStatus(): Promise<{
+    lastSync: Date | null;
+    itemCount: number;
+    isHealthy: boolean;
+  }> {
+    try {
+      // Try KV first (faster)
+      const lastSyncKV = await kv.get('rsr:metadata:lastSync');
+      const itemCountKV = await kv.get('rsr:metadata:itemCount');
+      
+      if (lastSyncKV && itemCountKV) {
+        const lastSync = new Date(lastSyncKV as string);
+        const itemCount = itemCountKV as number;
+        const isHealthy = (Date.now() - lastSync.getTime()) < 3 * 60 * 60 * 1000; // Less than 3 hours old
+        
+        return { lastSync, itemCount, isHealthy };
+      }
+      
+      // Fallback to Postgres
+      const result = await sql`
+        SELECT last_sync, item_count 
+        FROM rsr_sync_metadata 
+        ORDER BY id DESC 
+        LIMIT 1
+      `;
+      
+      if (result.rows.length > 0) {
+        const row = result.rows[0];
+        const lastSync = new Date(row.last_sync);
+        const itemCount = row.item_count;
+        const isHealthy = (Date.now() - lastSync.getTime()) < 3 * 60 * 60 * 1000;
+        
+        return { lastSync, itemCount, isHealthy };
+      }
+      
+      return { lastSync: null, itemCount: 0, isHealthy: false };
+      
+    } catch (error) {
+      console.error('Failed to get sync status:', error);
+      return { lastSync: null, itemCount: 0, isHealthy: false };
+    }
+  }
+}
