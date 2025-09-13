@@ -8,7 +8,7 @@ This guide provides step-by-step instructions to deploy the XL Arms application 
 - [x] Next.js 15.4.5 application with TypeScript
 - [x] `vercel.json` configuration with cron jobs
 - [x] API routes structured properly (`/api/rsr/sync`, `/api/rsr/products`)
-- [x] Environment variable mapping in `vercel.json`
+- [x] Environment variables configured via Vercel dashboard
 - [x] Dependencies include `@vercel/kv` and `@vercel/postgres`
 - [x] Build process working without errors
 - [x] Comprehensive RSR FTP integration

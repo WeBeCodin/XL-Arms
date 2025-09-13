@@ -9,13 +9,5 @@
     "src/app/api/rsr/sync/route.ts": {
       "maxDuration": 60
     }
-  },
-  "env": {
-    "RSR_FTP_HOST": "@rsr_ftp_host",
-    "RSR_FTP_PORT": "@rsr_ftp_port", 
-    "RSR_FTP_USER": "@rsr_ftp_user",
-    "RSR_FTP_PASSWORD": "@rsr_ftp_password",
-    "RSR_FTP_SECURE": "@rsr_ftp_secure",
-    "RSR_USE_KV": "@rsr_use_kv"
   }
 }
