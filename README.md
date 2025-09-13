@@ -1,36 +1,130 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# XL Arms - Professional Firearms Services
 
-## Getting Started
+A Next.js application for XL Arms firearms business with comprehensive RSR inventory integration, designed for Vercel serverless deployment.
 
-First, run the development server:
+## 🚀 Quick Deployment to Vercel
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/WeBeCodin/XL-Arms)
+
+### One-Command Deployment
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Deploy to production
+./deploy.sh --production
+
+# Deploy to preview
+./deploy.sh
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **RSR FTP Integration** - Automated inventory synchronization with RSR Group
+- **Dual Database Support** - Works with Vercel KV (Redis) or Postgres
+- **Automated Sync** - Cron job runs every 6 hours
+- **RESTful API** - Product search and inventory management
+- **Production Ready** - Optimized for Vercel serverless platform
+- **Security First** - Encrypted connections, secure credential storage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📚 Documentation
 
-## Learn More
+- [**Quick Start Guide**](./QUICK_START.md) - Get deployed in 5 minutes
+- [**Detailed Deployment Guide**](./VERCEL_DEPLOYMENT_GUIDE.md) - Complete setup instructions
+- [**RSR Integration Details**](./docs/RSR_FTP_INTEGRATION.md) - Technical implementation
+- [**Implementation Checklist**](./docs/IMPLEMENTATION_CHECKLIST.md) - Step-by-step guide
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠 Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- RSR Group FTP account (for production)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Local Development
+```bash
+# Install dependencies
+npm install
 
-## Deploy on Vercel
+# Copy environment template
+cp .env.local.example .env.local
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Edit .env.local with your credentials
+# Run development server
+npm run dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open [http://localhost:3000](http://localhost:3000) to see the application.
+
+## 🔧 API Endpoints
+
+### RSR Integration
+- `GET /api/rsr/sync` - Check sync status
+- `POST /api/rsr/sync` - Trigger manual sync
+- `GET /api/rsr/products` - Search products
+- `POST /api/rsr/products` - Advanced filtering
+
+### Environment Variables
+Required for production deployment:
+```env
+RSR_FTP_HOST=ftps.rsrgroup.com
+RSR_FTP_PORT=2222
+RSR_FTP_USER=your_account_number
+RSR_FTP_PASSWORD=your_password
+RSR_FTP_SECURE=true
+RSR_USE_KV=false
+```
+
+## 🗄 Database Options
+
+### Vercel KV (Redis) - Recommended for simple setup
+- High-performance caching
+- Automatic scaling
+- Set `RSR_USE_KV=true`
+
+### Vercel Postgres - Recommended for complex queries
+- Full relational database
+- Advanced indexing and queries
+- Set `RSR_USE_KV=false`
+
+## 🔒 Security
+
+- ✅ FTPS encrypted connections to RSR servers
+- ✅ Environment variables for credential storage
+- ✅ Input validation and sanitization
+- ✅ HTTPS enforcement
+- ✅ No hardcoded secrets
+
+## 🚀 Production Deployment
+
+This application is optimized for Vercel deployment:
+
+1. **Automated Setup**: Use `./deploy.sh --production`
+2. **Environment Variables**: Configure in Vercel dashboard
+3. **Database**: Connect KV or Postgres in Vercel
+4. **Cron Jobs**: Automatically configured for inventory sync
+5. **Monitoring**: Built-in logging and error tracking
+
+## 📊 RSR Integration
+
+Comprehensive integration with RSR Group's firearms inventory system:
+
+- **77-Field Format Support** - Complete RSR data parsing
+- **50,000+ Products** - Handles large inventory catalogs
+- **Real-time Sync** - Automated updates every 6 hours
+- **Search & Filter** - Advanced product discovery
+- **FFL Compliant** - Designed for licensed firearms dealers
+
+## 🆘 Support
+
+- Check [troubleshooting guide](./VERCEL_DEPLOYMENT_GUIDE.md#troubleshooting)
+- Review [implementation checklist](./docs/IMPLEMENTATION_CHECKLIST.md)
+- Contact RSR Group for FTP credentials
+- Monitor Vercel function logs for issues
+
+## 📋 Requirements
+
+- RSR Group FTP account
+- Valid FFL license
+- Vercel account (free tier sufficient)
+
+---
+
+**Ready to deploy your firearms inventory system?** Start with the [Quick Start Guide](./QUICK_START.md) 🚀
