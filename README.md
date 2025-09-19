@@ -27,6 +27,7 @@ A Next.js application for XL Arms firearms business with comprehensive RSR inven
 ## 📚 Documentation
 
 - [**Quick Start Guide**](./QUICK_START.md) - Get deployed in 5 minutes
+- [**Vercel FTP Strategy**](./vercel-ftp-strategy.md) - Comprehensive FTP deployment strategy
 - [**Detailed Deployment Guide**](./VERCEL_DEPLOYMENT_GUIDE.md) - Complete setup instructions
 - [**RSR Integration Details**](./docs/RSR_FTP_INTEGRATION.md) - Technical implementation
 - [**Implementation Checklist**](./docs/IMPLEMENTATION_CHECKLIST.md) - Step-by-step guide
