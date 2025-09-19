@@ -2,16 +2,18 @@
 
 This guide provides step-by-step instructions to deploy the XL Arms application to Vercel.
 
+📋 **For comprehensive FTP strategy and technical implementation details, see [vercel-ftp-strategy.md](./vercel-ftp-strategy.md)**
+
 ## Pre-Deployment Checklist
 
 ### ✅ Already Configured
 - [x] Next.js 15.4.5 application with TypeScript
 - [x] `vercel.json` configuration with cron jobs
-- [x] API routes structured properly (`/api/rsr/sync`, `/api/rsr/products`)
+- [x] API routes structured properly (`/api/rsr/sync`, `/api/rsr/products`, `/api/rsr/health`)
 - [x] Environment variables configured via Vercel dashboard
 - [x] Dependencies include `@vercel/kv` and `@vercel/postgres`
 - [x] Build process working without errors
-- [x] Comprehensive RSR FTP integration
+- [x] Comprehensive RSR FTP integration with Vercel optimizations
 
 ## Deployment Steps
 
@@ -95,11 +97,17 @@ The sync function is configured with extended timeout (60 seconds):
 
 ### 1. Test API Endpoints
 ```bash
+# Test FTP connection health
+curl https://your-domain.vercel.app/api/rsr/health
+
 # Test sync status
 curl https://your-domain.vercel.app/api/rsr/sync
 
 # Test products API
 curl https://your-domain.vercel.app/api/rsr/products
+
+# Trigger manual sync
+curl -X POST https://your-domain.vercel.app/api/rsr/sync
 ```
 
 ### 2. Verify Cron Jobs

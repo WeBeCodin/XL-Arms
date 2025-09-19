@@ -2,12 +2,18 @@
   "crons": [
     {
       "path": "/api/rsr/sync",
-      "schedule": "0 6 * * *"
+      "schedule": "0 */6 * * *"
     }
   ],
   "functions": {
     "src/app/api/rsr/sync/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/rsr/health/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/rsr/products/route.ts": {
+      "maxDuration": 30
     }
   }
 }

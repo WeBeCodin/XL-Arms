@@ -26,14 +26,22 @@ export class RSRFTPClient {
 
   async connect(): Promise<void> {
     try {
-      await this.client.access({
+      // Vercel-optimized connection settings
+      const connectionOptions = {
         host: this.config.host,
         port: this.config.port,
         user: this.config.user,
         password: this.config.password,
         secure: this.config.secure || false,
-        secureOptions: this.config.secureOptions,
-      });
+        secureOptions: {
+          // RSR-specific TLS settings for Vercel compatibility
+          minVersion: 'TLSv1.2' as const,
+          rejectUnauthorized: false, // RSR may use self-signed certificates
+          ...this.config.secureOptions,
+        },
+      };
+
+      await this.client.access(connectionOptions);
       
       console.log('Connected to RSR FTP server');
     } catch (error) {
@@ -134,6 +142,53 @@ export class RSRFTPClient {
       console.error('Connection check failed:', error);
       return false;
     }
+  }
+
+  // Vercel-optimized connection check with detailed metrics
+  async checkConnectionWithMetrics(): Promise<{
+    isHealthy: boolean;
+    responseTime: number;
+    error?: string;
+    serverInfo?: string;
+  }> {
+    const startTime = Date.now();
+    
+    try {
+      await this.connect();
+      
+      // Test basic operations
+      const files = await this.listFiles('/');
+      const fileCount = files.length;
+      
+      // Get server info if available
+      const serverInfo = this.client.ftp.socket?.remoteAddress || 'unknown';
+      
+      await this.disconnect();
+      
+      return {
+        isHealthy: true,
+        responseTime: Date.now() - startTime,
+        serverInfo: `Connected to ${serverInfo}, found ${fileCount} files`,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Connection check with metrics failed:', error);
+      
+      return {
+        isHealthy: false,
+        responseTime: Date.now() - startTime,
+        error: this.sanitizeError(errorMessage),
+      };
+    }
+  }
+
+  // Sanitize error messages to remove sensitive information
+  private sanitizeError(error: string): string {
+    return error
+      .replace(/password=[^&\s]*/gi, 'password=***')
+      .replace(/user=[^&\s]*/gi, 'user=***')
+      .replace(/auth=[^&\s]*/gi, 'auth=***')
+      .replace(/token=[^&\s]*/gi, 'token=***');
   }
 
   // Helper method to create an RSRFTPClient from environment variables
