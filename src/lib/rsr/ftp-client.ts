@@ -105,11 +105,17 @@ export class RSRFTPClient {
 
   async getInventoryFile(): Promise<Buffer> {
     try {
-      // RSR typically provides inventory files with names like:
-      // - rsrinventory.txt
-      // - inventory_YYYYMMDD.txt
-      // - current_inventory.csv
+      // RSR accounts typically don't have list permissions
+      // Use direct file path from environment variable if available
+      const directFilePath = process.env.RSR_FTP_FILE_PATH;
       
+      if (directFilePath) {
+        console.log(`Using direct file path: ${directFilePath}`);
+        return await this.downloadToBuffer(directFilePath);
+      }
+      
+      // Fallback: Try to list files (for accounts with list permissions)
+      console.log('No direct file path configured, attempting to list files...');
       const files = await this.listFiles('/');
       
       // Look for common RSR inventory file patterns
@@ -135,7 +141,21 @@ export class RSRFTPClient {
   async checkConnection(): Promise<boolean> {
     try {
       await this.connect();
-      await this.listFiles('/');
+      
+      // If we have a direct file path, test downloading a small portion
+      const directFilePath = process.env.RSR_FTP_FILE_PATH;
+      if (directFilePath) {
+        console.log('Testing connection with direct file access...');
+        // Just verify we can connect and the file exists
+        // We don't actually download the full file
+        await this.client.size(directFilePath);
+        console.log('Direct file access successful');
+      } else {
+        // Fallback: Try listing for accounts with list permissions
+        console.log('Testing connection with file listing...');
+        await this.listFiles('/');
+      }
+      
       await this.disconnect();
       return true;
     } catch (error) {
@@ -156,19 +176,30 @@ export class RSRFTPClient {
     try {
       await this.connect();
       
-      // Test basic operations
-      const files = await this.listFiles('/');
-      const fileCount = files.length;
-      
       // Get server info if available
       const serverInfo = this.client.ftp.socket?.remoteAddress || 'unknown';
+      
+      // Test basic operations based on available permissions
+      const directFilePath = process.env.RSR_FTP_FILE_PATH;
+      let infoMessage = '';
+      
+      if (directFilePath) {
+        // Test file access without listing
+        const fileSize = await this.client.size(directFilePath);
+        infoMessage = `Connected to ${serverInfo}, file size: ${fileSize} bytes`;
+      } else {
+        // Fallback: Test with listing for accounts with list permissions
+        const files = await this.listFiles('/');
+        const fileCount = files.length;
+        infoMessage = `Connected to ${serverInfo}, found ${fileCount} files`;
+      }
       
       await this.disconnect();
       
       return {
         isHealthy: true,
         responseTime: Date.now() - startTime,
-        serverInfo: `Connected to ${serverInfo}, found ${fileCount} files`,
+        serverInfo: infoMessage,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
