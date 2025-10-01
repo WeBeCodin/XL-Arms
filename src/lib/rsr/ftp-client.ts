@@ -105,26 +105,41 @@ export class RSRFTPClient {
 
   async getInventoryFile(): Promise<Buffer> {
     try {
-      // RSR typically provides inventory files with names like:
-      // - rsrinventory.txt
-      // - inventory_YYYYMMDD.txt
-      // - current_inventory.csv
+      // RSR accounts typically don't have list permission, so we use direct file paths
+      // Priority order:
+      // 1. RSR_INVENTORY_FILE (specific file path from env)
+      // 2. RSR_INVENTORY_ZIP (zip file from env)
+      // 3. RSR_INVENTORY_PATH or RSR_INVENTORY_FILENAME (legacy env vars)
       
-      const files = await this.listFiles('/');
+      const filePath = process.env.RSR_INVENTORY_FILE 
+        || process.env.RSR_INVENTORY_ZIP
+        || process.env.RSR_INVENTORY_PATH 
+        || process.env.RSR_INVENTORY_FILENAME
+        || '/keydealer/rsrinventory-keydlr-new.txt'; // Default RSR path
+
+      console.log(`Downloading RSR inventory file from: ${filePath}`);
       
-      // Look for common RSR inventory file patterns
-      const inventoryFile = files.find(file => 
-        file.name.toLowerCase().includes('inventory') ||
-        file.name.toLowerCase().includes('rsrinventory') ||
-        file.name.toLowerCase().includes('current')
-      );
-      
-      if (!inventoryFile) {
-        throw new Error('No inventory file found on RSR FTP server');
+      try {
+        const buffer = await this.downloadToBuffer(filePath);
+        console.log(`Successfully downloaded ${buffer.length} bytes from ${filePath}`);
+        return buffer;
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error(`Failed to download file at ${filePath}:`, errorMsg);
+        
+        // If the configured file fails and it's a .txt file, try the .zip version
+        if (filePath.endsWith('.txt')) {
+          const zipPath = filePath.replace('.txt', '.zip');
+          console.log(`Attempting fallback to zip file: ${zipPath}`);
+          try {
+            return await this.downloadToBuffer(zipPath);
+          } catch (zipErr) {
+            console.error(`Fallback to zip also failed:`, zipErr instanceof Error ? zipErr.message : zipErr);
+          }
+        }
+        
+        throw new Error(`Failed to download RSR inventory file: ${errorMsg}`);
       }
-      
-      console.log(`Found inventory file: ${inventoryFile.name}`);
-      return await this.downloadToBuffer(inventoryFile.name);
       
     } catch (error) {
       console.error('Failed to get inventory file:', error);
@@ -135,7 +150,9 @@ export class RSRFTPClient {
   async checkConnection(): Promise<boolean> {
     try {
       await this.connect();
-      await this.listFiles('/');
+      // RSR accounts don't have list permission, so we test with a file size check
+      const filePath = process.env.RSR_INVENTORY_FILE || '/keydealer/rsrinventory-keydlr-new.txt';
+      await this.client.size(filePath); // Just check if file exists without downloading
       await this.disconnect();
       return true;
     } catch (error) {
@@ -156,9 +173,10 @@ export class RSRFTPClient {
     try {
       await this.connect();
       
-      // Test basic operations
-      const files = await this.listFiles('/');
-      const fileCount = files.length;
+      // Test basic operations - RSR accounts don't have list permission
+      // so we check file size instead
+      const filePath = process.env.RSR_INVENTORY_FILE || '/keydealer/rsrinventory-keydlr-new.txt';
+      const fileSize = await this.client.size(filePath);
       
       // Get server info if available
       const serverInfo = this.client.ftp.socket?.remoteAddress || 'unknown';
@@ -168,7 +186,7 @@ export class RSRFTPClient {
       return {
         isHealthy: true,
         responseTime: Date.now() - startTime,
-        serverInfo: `Connected to ${serverInfo}, found ${fileCount} files`,
+        serverInfo: `Connected to ${serverInfo}, inventory file size: ${fileSize} bytes`,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';

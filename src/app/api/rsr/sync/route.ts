@@ -9,6 +9,7 @@ export const maxDuration = 60; // Maximum function duration in seconds
 export async function POST() {
   const startTime = Date.now();
   let ftpClient: RSRFTPClient | null = null;
+  let discoveredFileList: string[] | undefined = undefined;
   
   try {
     console.log('Starting RSR inventory sync...');
@@ -23,7 +24,20 @@ export async function POST() {
     await ftpClient.connect();
     
     console.log('Downloading inventory file...');
-    const inventoryBuffer = await ftpClient.getInventoryFile();
+    let inventoryBuffer: Buffer | null = null;
+    let discoveredFileList: string[] | undefined = undefined;
+    try {
+      inventoryBuffer = await ftpClient.getInventoryFile();
+    } catch (err) {
+      // If discovery failed, try to obtain the remote file list for diagnostics
+      try {
+        const files = await ftpClient.listFiles('/');
+        discoveredFileList = files.map(f => f.name);
+      } catch (listErr) {
+        console.warn('Failed to list files for diagnostics:', listErr);
+      }
+      throw err;
+    }
     
     // Parse the inventory data
     console.log('Parsing inventory data...');
@@ -70,13 +84,13 @@ export async function POST() {
     
     return NextResponse.json(response);
     
-  } catch (error) {
+    } catch (error) {
     const processingTime = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     
     console.error('RSR sync failed:', error);
     
-    const response: RSRSyncResponse = {
+    const response: any = {
       success: false,
       recordsProcessed: 0,
       recordsUpdated: 0,
@@ -85,7 +99,11 @@ export async function POST() {
       syncDate: new Date(),
       processingTime,
     };
-    
+
+    if (process.env.RSR_DEBUG_EXPOSE_FILE_LIST === 'true' && typeof discoveredFileList !== 'undefined') {
+      response.remoteFiles = discoveredFileList;
+    }
+
     return NextResponse.json(response, { status: 500 });
     
   } finally {
