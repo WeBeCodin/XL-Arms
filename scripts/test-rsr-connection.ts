@@ -53,11 +53,15 @@ async function testRSRConnection() {
     console.log('ℹ️  Note: RSR account does not have list permission');
     console.log('   Using direct file path from environment variables\n');
     
-    // Test 3: Download and test parsing of the inventory file
-    const inventoryFile = process.env.RSR_INVENTORY_PATH || process.env.RSR_INVENTORY_FILE || '/keydealer/rsrinventory-keydlr-new.txt';
-    console.log(`📁 Attempting to download inventory file: ${inventoryFile}\n`);
+    // Test 3: Check if inventory file exists using SIZE command
+    const inventoryFile = process.env.RSR_INVENTORY_FILE || '/keydealer/rsrinventory-keydlr-new.txt';
+    console.log(`📁 Checking inventory file: ${inventoryFile}`);
     
     try {
+      const fileSize = await ftpClient.getFileSize(inventoryFile);
+      console.log(`✅ File exists! Size: ${formatBytes(fileSize)}\n`);
+      
+      // Test 4: Download and test parsing of the inventory file
       console.log(`📥 Downloading inventory file...`);
       
       const buffer = await ftpClient.downloadToBuffer(inventoryFile);

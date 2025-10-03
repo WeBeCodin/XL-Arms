@@ -25,7 +25,6 @@ export async function POST() {
     
     console.log('Downloading inventory file...');
     let inventoryBuffer: Buffer | null = null;
-    let discoveredFileList: string[] | undefined = undefined;
     try {
       inventoryBuffer = await ftpClient.getInventoryFile();
     } catch (err) {
@@ -90,7 +89,7 @@ export async function POST() {
     
     console.error('RSR sync failed:', error);
     
-    const response: any = {
+    const response: RSRSyncResponse & { remoteFiles?: string[] } = {
       success: false,
       recordsProcessed: 0,
       recordsUpdated: 0,

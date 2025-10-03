@@ -70,6 +70,17 @@ export class RSRFTPClient {
     }
   }
 
+  async getFileSize(remotePath: string): Promise<number> {
+    try {
+      const size = await this.client.size(remotePath);
+      console.log(`File ${remotePath} size: ${size} bytes`);
+      return size;
+    } catch (error) {
+      console.error(`Failed to get size of ${remotePath}:`, error);
+      throw new Error(`Failed to get file size: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   async downloadFile(remotePath: string, localPath: string): Promise<void> {
     try {
       await this.client.downloadTo(localPath, remotePath);
@@ -105,49 +116,40 @@ export class RSRFTPClient {
 
   async getInventoryFile(): Promise<Buffer> {
     try {
-      // If an explicit path or filename is provided via env, prefer that
-      // Note: RSR Key Dealer accounts do NOT have read/list permission,
-      // so RSR_INVENTORY_PATH is REQUIRED for these accounts
-      const envPath = process.env.RSR_INVENTORY_PATH || process.env.RSR_INVENTORY_FILENAME;
-      if (envPath) {
-        console.log(`RSR_INVENTORY_PATH provided, downloading directly: ${envPath}`);
-        return await this.downloadToBuffer(envPath);
-      }
+      // RSR accounts typically don't have list permission, so we use direct file paths
+      // Priority order:
+      // 1. RSR_INVENTORY_FILE (specific file path from env)
+      // 2. RSR_INVENTORY_ZIP (zip file from env)
+      // 3. RSR_INVENTORY_PATH or RSR_INVENTORY_FILENAME (legacy env vars)
+      
+      const filePath = process.env.RSR_INVENTORY_FILE 
+        || process.env.RSR_INVENTORY_ZIP
+        || process.env.RSR_INVENTORY_PATH 
+        || process.env.RSR_INVENTORY_FILENAME
+        || '/keydealer/rsrinventory-keydlr-new.txt'; // Default RSR path
 
-      // Attempt automatic discovery (only works if account has list permission)
-      console.log('No RSR_INVENTORY_PATH set, attempting automatic file discovery...');
+      console.log(`Downloading RSR inventory file from: ${filePath}`);
       
       try {
-        // RSR typically provides inventory files with names like:
-        // - rsrinventory.txt
-        // - inventory_YYYYMMDD.txt
-        // - current_inventory.csv
-
-        const files = await this.listFiles('/');
-
-        // Broad regex to match inventory-like filenames (csv, txt, optionally gz/zip)
-        const pattern = /(rsr|inventory|current)[-_\w\d]*\.(txt|csv|gz|zip)$/i;
-
-        // Also match files that include the word inventory anywhere
-        const inventoryFile = files.find(file => pattern.test(file.name) || /inventory/i.test(file.name));
-
-        if (!inventoryFile) {
-          // Log the remote file list to make troubleshooting easier (safe to log names)
-          const names = files.map(f => f.name).join(', ');
-          console.warn('No inventory file matched. Remote files:', names);
-          throw new Error('No inventory file found on RSR FTP server');
+        const buffer = await this.downloadToBuffer(filePath);
+        console.log(`Successfully downloaded ${buffer.length} bytes from ${filePath}`);
+        return buffer;
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err);
+        console.error(`Failed to download file at ${filePath}:`, errorMsg);
+        
+        // If the configured file fails and it's a .txt file, try the .zip version
+        if (filePath.endsWith('.txt')) {
+          const zipPath = filePath.replace('.txt', '.zip');
+          console.log(`Attempting fallback to zip file: ${zipPath}`);
+          try {
+            return await this.downloadToBuffer(zipPath);
+          } catch (zipErr) {
+            console.error(`Fallback to zip also failed:`, zipErr instanceof Error ? zipErr.message : zipErr);
+          }
         }
-
-        console.log(`Found inventory file: ${inventoryFile.name}`);
-        return await this.downloadToBuffer(inventoryFile.name);
-      } catch (listError) {
-        // If listing fails (e.g., no read/list permission), provide helpful error
-        console.error('Failed to list files for automatic discovery:', listError);
-        throw new Error(
-          'Cannot list FTP directory (no read/list permission). ' +
-          'Please set RSR_INVENTORY_PATH environment variable with the exact file path. ' +
-          'Example: RSR_INVENTORY_PATH=/keydealer/rsrinventory-keydlr-new.txt'
-        );
+        
+        throw new Error(`Failed to download RSR inventory file: ${errorMsg}`);
       }
       
     } catch (error) {
@@ -159,7 +161,9 @@ export class RSRFTPClient {
   async checkConnection(): Promise<boolean> {
     try {
       await this.connect();
-      await this.listFiles('/');
+      // RSR accounts don't have list permission, so we test with a file size check
+      const filePath = process.env.RSR_INVENTORY_FILE || '/keydealer/rsrinventory-keydlr-new.txt';
+      await this.getFileSize(filePath); // Just check if file exists without downloading
       await this.disconnect();
       return true;
     } catch (error) {
@@ -180,9 +184,10 @@ export class RSRFTPClient {
     try {
       await this.connect();
       
-      // Test basic operations
-      const files = await this.listFiles('/');
-      const fileCount = files.length;
+      // Test basic operations - RSR accounts don't have list permission
+      // so we check file size instead
+      const filePath = process.env.RSR_INVENTORY_FILE || '/keydealer/rsrinventory-keydlr-new.txt';
+      const fileSize = await this.getFileSize(filePath);
       
       // Get server info if available
       const serverInfo = this.client.ftp.socket?.remoteAddress || 'unknown';
@@ -192,7 +197,7 @@ export class RSRFTPClient {
       return {
         isHealthy: true,
         responseTime: Date.now() - startTime,
-        serverInfo: `Connected to ${serverInfo}, found ${fileCount} files`,
+        serverInfo: `Connected to ${serverInfo}, inventory file size: ${fileSize} bytes`,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
