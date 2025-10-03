@@ -1,0 +1,97 @@
+name: Deploy RSR FTP Integration to Vercel
+
+on:
+  workflow_dispatch:  # Manual trigger
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/lib/rsr/**'
+      - 'src/app/api/rsr/**'
+      - 'vercel.json'
+      - '.github/workflows/deploy-vercel.yml'
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  setup-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+      
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      
+      - name: Setup Environment Variables (if needed)
+        if: secrets.SETUP_ENV_VARS == 'true'
+        run: |
+          echo "Setting up RSR FTP environment variables..."
+          
+          # RSR FTP Connection
+          echo "ftps.rsrgroup.com" | vercel env add RSR_FTP_HOST production preview development --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+          echo "2222" | vercel env add RSR_FTP_PORT production preview development --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+          echo "52417" | vercel env add RSR_FTP_USER production preview development --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+          echo "${{ secrets.RSR_FTP_PASSWORD }}" | vercel env add RSR_FTP_PASSWORD production preview development --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+          echo "true" | vercel env add RSR_FTP_SECURE production preview development --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+          
+          # RSR Inventory File Path
+          echo "/keydealer/rsrinventory-keydlr-new.txt" | vercel env add RSR_INVENTORY_FILE production preview development --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+          
+          # Optional Configuration
+          echo "false" | vercel env add RSR_USE_KV production preview development --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+          echo "true" | vercel env add RSR_SYNC_ENABLED production preview development --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+          echo "50000" | vercel env add RSR_MAX_RECORDS production preview development --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+          echo "100" | vercel env add RSR_BATCH_SIZE production preview development --yes --token=${{ secrets.VERCEL_TOKEN }} || true
+          
+          echo "✅ Environment variables configured"
+      
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      
+      - name: Deploy to Vercel Production
+        id: deploy
+        run: |
+          DEPLOYMENT_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "Deployed to: $DEPLOYMENT_URL"
+      
+      - name: Test Deployment
+        run: |
+          echo "Testing health endpoint..."
+          curl -f "${{ steps.deploy.outputs.deployment_url }}/api/rsr/sync" || echo "Health check returned non-200"
+          
+          echo "Triggering manual sync..."
+          curl -X POST -f "${{ steps.deploy.outputs.deployment_url }}/api/rsr/sync" || echo "Sync returned non-200"
+      
+      - name: Create deployment summary
+        run: |
+          echo "## RSR FTP Integration Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deployment successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment URL:** ${{ steps.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Commands:" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "# Check health" >> $GITHUB_STEP_SUMMARY
+          echo "curl ${{ steps.deploy.outputs.deployment_url }}/api/rsr/sync" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Trigger sync" >> $GITHUB_STEP_SUMMARY
+          echo "curl -X POST ${{ steps.deploy.outputs.deployment_url }}/api/rsr/sync" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
