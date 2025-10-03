@@ -49,93 +49,68 @@ async function testRSRConnection() {
     await ftpClient.connect();
     console.log('✅ Connected to RSR FTP server successfully\n');
     
-    // Test 3: List files in root directory
-    console.log('📁 Listing files in root directory...');
-    const files = await ftpClient.listFiles('/');
-    console.log(`✅ Found ${files.length} files/directories:\n`);
+    // Note: RSR accounts don't have list permission, so we skip directory listing
+    console.log('ℹ️  Note: RSR account does not have list permission');
+    console.log('   Using direct file path from environment variables\n');
     
-    // Display file list
-    files.forEach((file, index) => {
-      const size = file.size ? `(${formatBytes(file.size)})` : '';
-      const date = file.modifiedAt ? file.modifiedAt.toISOString().split('T')[0] : 'Unknown';
-      console.log(`   ${index + 1}. ${file.name} ${size} - ${date}`);
-    });
-    console.log();
+    // Test 3: Check if inventory file exists using SIZE command
+    const inventoryFile = process.env.RSR_INVENTORY_FILE || '/keydealer/rsrinventory-keydlr-new.txt';
+    console.log(`📁 Checking inventory file: ${inventoryFile}`);
     
-    // Test 4: Look for inventory files
-    console.log('🔍 Looking for inventory files...');
-    const inventoryFiles = files.filter(file => 
-      file.name.toLowerCase().includes('inventory') ||
-      file.name.toLowerCase().includes('rsrinventory') ||
-      file.name.toLowerCase().includes('current') ||
-      file.name.toLowerCase().endsWith('.csv') ||
-      file.name.toLowerCase().endsWith('.txt')
-    );
-    
-    if (inventoryFiles.length === 0) {
-      console.log('⚠️  No obvious inventory files found');
-      console.log('   Look for files with names like:');
-      console.log('   - rsrinventory.txt');
-      console.log('   - inventory_YYYYMMDD.txt');
-      console.log('   - current_inventory.csv\n');
-    } else {
-      console.log(`✅ Found ${inventoryFiles.length} potential inventory file(s):`);
-      inventoryFiles.forEach((file, index) => {
-        const size = file.size ? `(${formatBytes(file.size)})` : '';
-        console.log(`   ${index + 1}. ${file.name} ${size}`);
-      });
-      console.log();
+    try {
+      const fileSize = await ftpClient.getFileSize(inventoryFile);
+      console.log(`✅ File exists! Size: ${formatBytes(fileSize)}\n`);
       
-      // Test 5: Download and test parsing of the first inventory file
-      if (inventoryFiles.length > 0) {
-        const testFile = inventoryFiles[0];
-        console.log(`📥 Testing download and parsing of ${testFile.name}...`);
-        
-        try {
-          const buffer = await ftpClient.downloadToBuffer(testFile.name);
-          console.log(`✅ Downloaded ${formatBytes(buffer.length)} successfully`);
-          
-          // Test parsing
-          console.log('🔍 Testing inventory parser...');
-          const parser = new RSRInventoryParser();
-          const stats = parser.getParsingStats(buffer);
-          
-          console.log(`   File size: ${formatBytes(stats.fileSize)}`);
-          console.log(`   Total lines: ${stats.totalLines}`);
-          console.log(`   Estimated records: ${stats.estimatedRecords}`);
-          console.log(`   Encoding: ${stats.encoding}`);
-          
-          // Parse a small sample
-          console.log('\n📊 Parsing sample data (first 10 records)...');
-          const sampleParser = new RSRInventoryParser({ maxRecords: 10 });
-          const sampleItems = await sampleParser.parseInventory(buffer);
-          
-          console.log(`✅ Successfully parsed ${sampleItems.length} sample items`);
-          
-          if (sampleItems.length > 0) {
-            console.log('\n📋 Sample product data:');
-            const sample = sampleItems[0];
-            console.log(`   Stock Number: ${sample.rsrStockNumber}`);
-            console.log(`   Description: ${sample.description}`);
-            console.log(`   Manufacturer: ${sample.manufacturerName}`);
-            console.log(`   Price: $${sample.price.toFixed(2)}`);
-            console.log(`   Quantity: ${sample.quantityOnHand}`);
-          }
-          
-          // Save sample for inspection
-          const outputDir = './tmp';
-          if (!fs.existsSync(outputDir)) {
-            fs.mkdirSync(outputDir, { recursive: true });
-          }
-          
-          const samplePath = path.join(outputDir, 'rsr-sample.json');
-          fs.writeFileSync(samplePath, JSON.stringify(sampleItems, null, 2));
-          console.log(`\n💾 Sample data saved to: ${samplePath}`);
-          
-        } catch (error) {
-          console.error(`❌ Error testing file download/parsing: ${error}`);
-        }
+      // Test 4: Download and test parsing of the inventory file
+      console.log(`📥 Downloading inventory file...`);
+      
+      const buffer = await ftpClient.downloadToBuffer(inventoryFile);
+      console.log(`✅ Downloaded ${formatBytes(buffer.length)} successfully\n`);
+      
+      // Test parsing
+      console.log('🔍 Testing inventory parser...');
+      const parser = new RSRInventoryParser();
+      const stats = parser.getParsingStats(buffer);
+      
+      console.log(`   File size: ${formatBytes(stats.fileSize)}`);
+      console.log(`   Total lines: ${stats.totalLines}`);
+      console.log(`   Estimated records: ${stats.estimatedRecords}`);
+      console.log(`   Encoding: ${stats.encoding}`);
+      
+      // Parse a small sample
+      console.log('\n📊 Parsing sample data (first 10 records)...');
+      const sampleParser = new RSRInventoryParser({ maxRecords: 10 });
+      const sampleItems = await sampleParser.parseInventory(buffer);
+      
+      console.log(`✅ Successfully parsed ${sampleItems.length} sample items`);
+      
+      if (sampleItems.length > 0) {
+        console.log('\n📋 Sample product data:');
+        const sample = sampleItems[0];
+        console.log(`   Stock Number: ${sample.rsrStockNumber}`);
+        console.log(`   Description: ${sample.description}`);
+        console.log(`   Manufacturer: ${sample.manufacturerName}`);
+        console.log(`   Price: $${sample.price.toFixed(2)}`);
+        console.log(`   Quantity: ${sample.quantityOnHand}`);
       }
+      
+      // Save sample for inspection
+      const outputDir = './tmp';
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      
+      const samplePath = path.join(outputDir, 'rsr-sample.json');
+      fs.writeFileSync(samplePath, JSON.stringify(sampleItems, null, 2));
+      console.log(`\n💾 Sample data saved to: ${samplePath}`);
+      
+    } catch (error) {
+      console.error(`❌ Error accessing inventory file: ${error}`);
+      console.error('\nTroubleshooting:');
+      console.error(`- Verify file path is correct: ${inventoryFile}`);
+      console.error('- Check if file has been generated (see RSR schedule)');
+      console.error('- Try the .zip version as fallback');
+      throw error;
     }
     
     // Test 6: Test basic connection check method
