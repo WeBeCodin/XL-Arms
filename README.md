@@ -17,16 +17,31 @@ A Next.js application for XL Arms firearms business with comprehensive RSR inven
 
 ## ✨ Features
 
+### E-Commerce Storefront
+- **Product Catalog** - Browse 29,820+ RSR products with search and filters
+- **Product Details** - Comprehensive product pages with specifications
+- **Shopping Cart** - Persistent cart with Zustand state management
+- **Checkout Flow** - Complete checkout with form validation
+- **Responsive Design** - Mobile-first responsive UI
+
+### RSR Integration
 - **RSR FTP Integration** - Automated inventory synchronization with RSR Group
 - **Dual Database Support** - Works with Vercel KV (Redis) or Postgres
 - **Automated Sync** - Cron job runs every 6 hours
 - **RESTful API** - Product search and inventory management
+
+### Infrastructure
 - **Production Ready** - Optimized for Vercel serverless platform
 - **Security First** - Encrypted connections, secure credential storage
+- **Payment Ready** - Infrastructure for Stripe/Square integration
+- **Shipping Ready** - Placeholder for carrier integration
+- **Legal Pages** - Terms, Privacy, and Shipping policy templates
 
 ## 📚 Documentation
 
 - [**Quick Start Guide**](./QUICK_START.md) - Get deployed in 5 minutes
+- [**Client Integration Guide**](./CLIENT_INTEGRATION_GUIDE.md) - **NEW** Complete integration checklist
+- [**E-Commerce Roadmap**](./ECOMMERCE_ROADMAP.md) - Future development plans
 - [**Vercel FTP Strategy**](./vercel-ftp-strategy.md) - Comprehensive FTP deployment strategy
 - [**Detailed Deployment Guide**](./VERCEL_DEPLOYMENT_GUIDE.md) - Complete setup instructions
 - [**RSR Integration Details**](./docs/RSR_FTP_INTEGRATION.md) - Technical implementation
@@ -59,8 +74,18 @@ Open [http://localhost:3000](http://localhost:3000) to see the application.
 ### RSR Integration
 - `GET /api/rsr/sync` - Check sync status
 - `POST /api/rsr/sync` - Trigger manual sync
-- `GET /api/rsr/products` - Search products
+- `GET /api/rsr/products` - Search products (with filters)
 - `POST /api/rsr/products` - Advanced filtering
+
+### Storefront Pages
+- `/` - Homepage with store link
+- `/store` - Product catalog with search and filters
+- `/store/[stockNumber]` - Individual product detail pages
+- `/cart` - Shopping cart management
+- `/checkout` - Checkout flow
+- `/terms` - Terms and conditions (template)
+- `/privacy` - Privacy policy (template)
+- `/shipping` - Shipping policy (template)
 
 ### Environment Variables
 Required for production deployment:
