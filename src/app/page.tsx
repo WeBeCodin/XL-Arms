@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Home() {
   const [scrollY, setScrollY] = useState(0);
@@ -32,7 +33,8 @@ export default function Home() {
           </div>
           
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#home" className="hover:text-amber-400 transition-colors">Home</a>
+            <Link href="/" className="hover:text-amber-400 transition-colors">Home</Link>
+            <Link href="/store" className="hover:text-amber-400 transition-colors">Store</Link>
             <a href="#contact" className="hover:text-amber-400 transition-colors">Contact</a>
           </div>
 
@@ -93,16 +95,21 @@ export default function Home() {
             </p>
             
             <div className="bg-gray-800/50 rounded-xl p-8 mb-8">
-              <h3 className="text-2xl font-heading font-bold text-amber-400 mb-6">Online Shop Coming Soon!</h3>
+              <h3 className="text-2xl font-heading font-bold text-amber-400 mb-6">Online Shop Now Open!</h3>
               <p className="text-lg text-gray-300 mb-6">
-                While we&apos;re setting up our new location, we&apos;re also launching a comprehensive online store 
-                to better serve our customers nationwide.
+                While we&apos;re setting up our new physical location, our online store is now live with thousands 
+                of products from RSR&apos;s inventory. Shop firearms, accessories, and more!
               </p>
               <div className="flex items-center justify-center">
-                <svg className="w-8 h-8 text-amber-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-                <span className="text-xl font-semibold text-gray-300">Stay tuned for updates!</span>
+                <Link 
+                  href="/store"
+                  className="inline-flex items-center px-8 py-3 bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-lg transition-colors"
+                >
+                  <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                  </svg>
+                  Shop Now
+                </Link>
               </div>
             </div>
 
