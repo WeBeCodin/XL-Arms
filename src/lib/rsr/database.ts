@@ -1,23 +1,23 @@
 import { RSRInventoryItem, RSRProduct } from '../types/rsr';
 import { sql } from '@vercel/postgres';
 import { kv } from '@vercel/kv';
-import { createClient } from '@vercel/kv';
+import Redis from 'ioredis';
 
 // This is a simplified example. Adapt to your database solution.
 export class RSRDatabase {
-  private kvClient: ReturnType<typeof createClient> | typeof kv;
+  private kvClient: typeof kv | Redis;
+  private useRedisProtocol: boolean;
 
   constructor() {
-    // Support both REDIS_URL and standard KV environment variables
+    // Support both REDIS_URL (direct Redis protocol) and standard KV environment variables (REST API)
     if (process.env.REDIS_URL && !process.env.KV_REST_API_URL) {
-      console.log('Using REDIS_URL for KV connection');
-      this.kvClient = createClient({
-        url: process.env.REDIS_URL,
-        token: '', // REDIS_URL includes auth
-      });
+      console.log('Using REDIS_URL with ioredis client');
+      this.kvClient = new Redis(process.env.REDIS_URL);
+      this.useRedisProtocol = true;
     } else {
-      console.log('Using standard KV environment variables');
+      console.log('Using standard KV REST API');
       this.kvClient = kv;
+      this.useRedisProtocol = false;
     }
   }
   
@@ -26,7 +26,7 @@ export class RSRDatabase {
    */
   async saveToKV(items: RSRInventoryItem[]): Promise<void> {
     try {
-      console.log(`Saving ${items.length} items to Vercel KV...`);
+      console.log(`Saving ${items.length} items to Redis/KV...`);
       
       // Save items in batches to avoid memory issues
       const batchSize = 100;
@@ -38,7 +38,15 @@ export class RSRDatabase {
         // Execute batch operations
         for (const item of batch) {
           const key = `rsr:inventory:${item.rsrStockNumber}`;
-          await this.kvClient.set(key, JSON.stringify(item), { ex: 10800 }); // 3 hours expiration
+          const value = JSON.stringify(item);
+          
+          if (this.useRedisProtocol) {
+            // ioredis syntax: SET key value EX seconds
+            await (this.kvClient as Redis).set(key, value, 'EX', 10800);
+          } else {
+            // @vercel/kv syntax
+            await (this.kvClient as typeof kv).set(key, value, { ex: 10800 });
+          }
         }
         savedCount += batch.length;
         
@@ -46,13 +54,19 @@ export class RSRDatabase {
       }
       
       // Update metadata
-      await this.kvClient.set('rsr:metadata:lastSync', new Date().toISOString());
-      await this.kvClient.set('rsr:metadata:itemCount', items.length);
+      const lastSync = new Date().toISOString();
+      if (this.useRedisProtocol) {
+        await (this.kvClient as Redis).set('rsr:metadata:lastSync', lastSync);
+        await (this.kvClient as Redis).set('rsr:metadata:itemCount', items.length.toString());
+      } else {
+        await (this.kvClient as typeof kv).set('rsr:metadata:lastSync', lastSync);
+        await (this.kvClient as typeof kv).set('rsr:metadata:itemCount', items.length);
+      }
       
-      console.log(`Successfully saved ${savedCount} items to KV`);
+      console.log(`Successfully saved ${savedCount} items to Redis/KV`);
       
     } catch (error) {
-      console.error('Failed to save to KV:', error);
+      console.error('Failed to save to Redis/KV:', error);
       throw new Error(`KV save failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -167,7 +181,12 @@ export class RSRDatabase {
   async getProductsFromKV(page: number = 1, pageSize: number = 50): Promise<RSRProduct[]> {
     try {
       // Get all inventory keys
-      const keys = await this.kvClient.keys('rsr:inventory:*');
+      let keys: string[];
+      if (this.useRedisProtocol) {
+        keys = await (this.kvClient as Redis).keys('rsr:inventory:*');
+      } else {
+        keys = await (this.kvClient as typeof kv).keys('rsr:inventory:*');
+      }
       
       // Calculate pagination
       const startIndex = (page - 1) * pageSize;
@@ -175,11 +194,18 @@ export class RSRDatabase {
       const paginatedKeys = keys.slice(startIndex, endIndex);
       
       // Get items for this page
-      const items = await this.kvClient.mget(...paginatedKeys);
+      let items: (string | null)[];
+      if (this.useRedisProtocol) {
+        const results = await (this.kvClient as Redis).mget(...paginatedKeys);
+        items = results;
+      } else {
+        const results = await (this.kvClient as typeof kv).mget(...paginatedKeys);
+        items = results as (string | null)[];
+      }
       
       return items
-        .filter(item => item !== null)
-        .map(item => JSON.parse(item as string) as RSRProduct);
+        .filter((item): item is string => item !== null)
+        .map((item) => JSON.parse(item) as RSRProduct);
         
     } catch (error) {
       console.error('Failed to get products from KV:', error);
@@ -387,12 +413,21 @@ export class RSRDatabase {
   }> {
     try {
       // Try KV first (faster)
-      const lastSyncKV = await this.kvClient.get('rsr:metadata:lastSync');
-      const itemCountKV = await this.kvClient.get('rsr:metadata:itemCount');
+      let lastSyncKV: string | null;
+      let itemCountKV: string | number | null;
+      
+      if (this.useRedisProtocol) {
+        lastSyncKV = await (this.kvClient as Redis).get('rsr:metadata:lastSync');
+        const itemCountStr = await (this.kvClient as Redis).get('rsr:metadata:itemCount');
+        itemCountKV = itemCountStr ? parseInt(itemCountStr) : null;
+      } else {
+        lastSyncKV = await (this.kvClient as typeof kv).get('rsr:metadata:lastSync');
+        itemCountKV = await (this.kvClient as typeof kv).get('rsr:metadata:itemCount');
+      }
       
       if (lastSyncKV && itemCountKV) {
-        const lastSync = new Date(lastSyncKV as string);
-        const itemCount = itemCountKV as number;
+        const lastSync = new Date(lastSyncKV);
+        const itemCount = typeof itemCountKV === 'string' ? parseInt(itemCountKV) : itemCountKV;
         const isHealthy = (Date.now() - lastSync.getTime()) < 3 * 60 * 60 * 1000; // Less than 3 hours old
         
         return { lastSync, itemCount, isHealthy };
