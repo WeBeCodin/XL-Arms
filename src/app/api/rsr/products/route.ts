@@ -27,6 +27,9 @@ export async function GET(request: NextRequest) {
     
     const database = new RSRDatabase();
     
+    // Get sync status for metadata
+    const syncStatus = await database.getSyncStatus();
+    
     // Determine which database to use
     const useKV = process.env.RSR_USE_KV === 'true';
     
@@ -77,6 +80,9 @@ export async function GET(request: NextRequest) {
         page,
         pageSize,
         hasMore: false, // KV pagination is simplified
+        totalProducts: syncStatus.itemCount,
+        totalPages: Math.ceil(syncStatus.itemCount / pageSize),
+        lastSync: syncStatus.lastSync,
       };
       
       return NextResponse.json(response);
@@ -107,6 +113,9 @@ export async function GET(request: NextRequest) {
         page,
         pageSize,
         hasMore: (page * pageSize) < result.totalCount,
+        totalProducts: syncStatus.itemCount,
+        totalPages: Math.ceil(result.totalCount / pageSize),
+        lastSync: syncStatus.lastSync,
       };
       
       return NextResponse.json(response);
@@ -144,6 +153,9 @@ export async function POST(request: NextRequest) {
     console.log('RSR Products Search API:', { page, pageSize, filters, sortBy, sortOrder });
     
     const database = new RSRDatabase();
+    
+    // Get sync status for metadata
+    const syncStatus = await database.getSyncStatus();
     
     // For now, use the basic search functionality
     // This could be enhanced to support complex filtering
@@ -199,6 +211,9 @@ export async function POST(request: NextRequest) {
       page,
       pageSize,
       hasMore: false, // Simplified for filtered results
+      totalProducts: syncStatus.itemCount,
+      totalPages: Math.ceil(products.length / pageSize),
+      lastSync: syncStatus.lastSync,
     };
     
     return NextResponse.json(response);

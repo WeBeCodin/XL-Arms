@@ -101,4 +101,7 @@ export interface RSRProductsResponse {
   page: number;
   pageSize: number;
   hasMore: boolean;
+  totalProducts?: number;
+  totalPages?: number;
+  lastSync?: Date | string | null;
 }
