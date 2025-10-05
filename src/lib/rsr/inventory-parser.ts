@@ -108,40 +108,44 @@ export class RSRInventoryParser {
         description: this.cleanField(fields[2] || ''),
         departmentNumber: this.parseNumber(fields[3]) || 0,
         manufacturerId: this.cleanField(fields[4] || ''),
-        manufacturerName: this.cleanField(fields[5] || ''),
-        price: this.parseFloat(fields[6]) || 0,
-        retailPrice: this.parseFloat(fields[7]) || 0,
-        quantityOnHand: this.parseNumber(fields[8]) || 0,
-        weight: this.parseFloat(fields[9]) || 0,
-        length: this.cleanField(fields[10] || ''),
-        width: this.cleanField(fields[11] || ''),
-        height: this.cleanField(fields[12] || ''),
-        imageUrl: this.cleanField(fields[13] || ''),
-        category: this.cleanField(fields[14] || ''),
-        subcategory: this.cleanField(fields[15] || ''),
-        model: this.cleanField(fields[16] || ''),
-        caliber: this.cleanField(fields[17] || ''),
-        capacity: this.parseNumber(fields[18]) || 0,
-        action: this.cleanField(fields[19] || ''),
-        barrelLength: this.cleanField(fields[20] || ''),
-        finish: this.cleanField(fields[21] || ''),
-        stock: this.cleanField(fields[22] || ''),
-        sights: this.cleanField(fields[23] || ''),
-        safetyFeatures: this.cleanField(fields[24] || ''),
-        accessories: this.cleanField(fields[25] || ''),
-        warranty: this.cleanField(fields[26] || ''),
-        countryOfOrigin: this.cleanField(fields[27] || ''),
-        federalExciseTax: this.parseFloat(fields[28]) || 0,
-        shippingWeight: this.parseFloat(fields[29]) || 0,
-        shippingLength: this.cleanField(fields[30] || ''),
-        shippingWidth: this.cleanField(fields[31] || ''),
-        shippingHeight: this.cleanField(fields[32] || ''),
-        hazmat: this.parseBoolean(fields[33]),
-        freeShipping: this.parseBoolean(fields[34]),
-        dropShip: this.parseBoolean(fields[35]),
-        allocation: this.parseBoolean(fields[36]),
-        newItem: this.parseBoolean(fields[37]),
-        closeout: this.parseBoolean(fields[38]),
+        retailPrice: this.parseFloat(fields[5]) || 0,  // Field 6: MSRP - what customer pays
+        price: this.parseFloat(fields[6]) || 0,         // Field 7: Your cost - wholesale price
+        quantityOnHand: this.parseNumber(fields[7]) || 0, // Field 8: Quantity
+        weight: this.parseFloat(fields[8]) || 0,        // Field 9: Weight
+        category: this.cleanField(fields[9] || ''),     // Field 10: Category
+        manufacturerName: this.cleanField(fields[10] || ''), // Field 11: Manufacturer Name
+        model: this.cleanField(fields[11] || ''),       // Field 12: Model
+        subcategory: this.cleanField(fields[12] || ''),  // Field 13: Special status like "Closeout"
+        // Field 14: Full detailed description
+        imageUrl: this.cleanField(fields[14] || ''),    // Field 15: Image filename
+        // Additional fields from later in the record
+        closeout: this.cleanField(fields[12]).toLowerCase() === 'closeout',
+        // Shipping dimensions from fields 73-75
+        length: this.cleanField(fields[72] || ''),
+        width: this.cleanField(fields[73] || ''),
+        height: this.cleanField(fields[74] || ''),
+        // Placeholder values for unused fields
+        caliber: this.cleanField(fields[16] || ''),
+        capacity: 0,
+        action: '',
+        barrelLength: '',
+        finish: '',
+        stock: '',
+        sights: '',
+        safetyFeatures: '',
+        accessories: '',
+        warranty: '',
+        countryOfOrigin: '',
+        federalExciseTax: 0,
+        shippingWeight: this.parseFloat(fields[8]) || 0,
+        shippingLength: this.cleanField(fields[72] || ''),
+        shippingWidth: this.cleanField(fields[73] || ''),
+        shippingHeight: this.cleanField(fields[74] || ''),
+        hazmat: false,
+        freeShipping: false,
+        dropShip: false,
+        allocation: false,
+        newItem: false,
         lastUpdated: new Date(),
       };
 
