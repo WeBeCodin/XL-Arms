@@ -1,9 +1,25 @@
 import { RSRInventoryItem, RSRProduct } from '../types/rsr';
 import { sql } from '@vercel/postgres';
 import { kv } from '@vercel/kv';
+import { createClient } from '@vercel/kv';
 
 // This is a simplified example. Adapt to your database solution.
 export class RSRDatabase {
+  private kvClient: ReturnType<typeof createClient> | typeof kv;
+
+  constructor() {
+    // Support both REDIS_URL and standard KV environment variables
+    if (process.env.REDIS_URL && !process.env.KV_REST_API_URL) {
+      console.log('Using REDIS_URL for KV connection');
+      this.kvClient = createClient({
+        url: process.env.REDIS_URL,
+        token: '', // REDIS_URL includes auth
+      });
+    } else {
+      console.log('Using standard KV environment variables');
+      this.kvClient = kv;
+    }
+  }
   
   /**
    * Save inventory items to Vercel KV (Redis)
@@ -22,7 +38,7 @@ export class RSRDatabase {
         // Execute batch operations
         for (const item of batch) {
           const key = `rsr:inventory:${item.rsrStockNumber}`;
-          await kv.set(key, JSON.stringify(item), { ex: 10800 }); // 3 hours expiration
+          await this.kvClient.set(key, JSON.stringify(item), { ex: 10800 }); // 3 hours expiration
         }
         savedCount += batch.length;
         
@@ -30,8 +46,8 @@ export class RSRDatabase {
       }
       
       // Update metadata
-      await kv.set('rsr:metadata:lastSync', new Date().toISOString());
-      await kv.set('rsr:metadata:itemCount', items.length);
+      await this.kvClient.set('rsr:metadata:lastSync', new Date().toISOString());
+      await this.kvClient.set('rsr:metadata:itemCount', items.length);
       
       console.log(`Successfully saved ${savedCount} items to KV`);
       
@@ -151,7 +167,7 @@ export class RSRDatabase {
   async getProductsFromKV(page: number = 1, pageSize: number = 50): Promise<RSRProduct[]> {
     try {
       // Get all inventory keys
-      const keys = await kv.keys('rsr:inventory:*');
+      const keys = await this.kvClient.keys('rsr:inventory:*');
       
       // Calculate pagination
       const startIndex = (page - 1) * pageSize;
@@ -159,7 +175,7 @@ export class RSRDatabase {
       const paginatedKeys = keys.slice(startIndex, endIndex);
       
       // Get items for this page
-      const items = await kv.mget(...paginatedKeys);
+      const items = await this.kvClient.mget(...paginatedKeys);
       
       return items
         .filter(item => item !== null)
@@ -371,8 +387,8 @@ export class RSRDatabase {
   }> {
     try {
       // Try KV first (faster)
-      const lastSyncKV = await kv.get('rsr:metadata:lastSync');
-      const itemCountKV = await kv.get('rsr:metadata:itemCount');
+      const lastSyncKV = await this.kvClient.get('rsr:metadata:lastSync');
+      const itemCountKV = await this.kvClient.get('rsr:metadata:itemCount');
       
       if (lastSyncKV && itemCountKV) {
         const lastSync = new Date(lastSyncKV as string);
