@@ -81,18 +81,31 @@ export class RSRDatabase {
       // Create table if it doesn't exist
       await this.createInventoryTable();
       
-      // Clear existing data for fresh sync
-      await sql`DELETE FROM rsr_inventory`;
+      // Clear existing data for fresh sync (fast truncate)
+      await sql`TRUNCATE TABLE rsr_inventory`;
       
-      // Insert new data in batches
-      const batchSize = 50; // Smaller batch size for SQL inserts
+      // Insert new data in larger batches using COPY or multi-value INSERT
+      const batchSize = 1000; // Much larger batch for bulk insert
       let savedCount = 0;
       
       for (let i = 0; i < items.length; i += batchSize) {
         const batch = items.slice(i, i + batchSize);
         
-        // Prepare values for batch insert
-        const values = batch.map(item => [
+        // Build a multi-row INSERT statement
+        const values = batch.map((item, idx) => {
+          const offset = idx * 40; // 40 fields per item
+          return `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5},
+            $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10},
+            $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15},
+            $${offset + 16}, $${offset + 17}, $${offset + 18}, $${offset + 19}, $${offset + 20},
+            $${offset + 21}, $${offset + 22}, $${offset + 23}, $${offset + 24}, $${offset + 25},
+            $${offset + 26}, $${offset + 27}, $${offset + 28}, $${offset + 29}, $${offset + 30},
+            $${offset + 31}, $${offset + 32}, $${offset + 33}, $${offset + 34}, $${offset + 35},
+            $${offset + 36}, $${offset + 37}, $${offset + 38}, $${offset + 39}, $${offset + 40})`;
+        }).join(',\n');
+        
+        // Flatten all values for parameterized query
+        const flatValues = batch.flatMap(item => [
           item.rsrStockNumber,
           item.upcCode,
           item.description,
@@ -135,30 +148,19 @@ export class RSRDatabase {
           new Date().toISOString(),
         ]);
         
-        // Execute individual inserts for each item in the batch
-        for (const valueSet of values) {
-          await sql`
-            INSERT INTO rsr_inventory (
-              rsr_stock_number, upc_code, description, department_number, manufacturer_id,
-              manufacturer_name, price, retail_price, quantity_on_hand, weight,
-              length, width, height, image_url, category, subcategory, model, caliber,
-              capacity, action, barrel_length, finish, stock, sights, safety_features,
-              accessories, warranty, country_of_origin, federal_excise_tax, shipping_weight,
-              shipping_length, shipping_width, shipping_height, hazmat, free_shipping,
-              drop_ship, allocation, new_item, closeout, last_updated
-            )
-            VALUES (
-              ${valueSet[0]}, ${valueSet[1]}, ${valueSet[2]}, ${valueSet[3]}, ${valueSet[4]},
-              ${valueSet[5]}, ${valueSet[6]}, ${valueSet[7]}, ${valueSet[8]}, ${valueSet[9]},
-              ${valueSet[10]}, ${valueSet[11]}, ${valueSet[12]}, ${valueSet[13]}, ${valueSet[14]},
-              ${valueSet[15]}, ${valueSet[16]}, ${valueSet[17]}, ${valueSet[18]}, ${valueSet[19]},
-              ${valueSet[20]}, ${valueSet[21]}, ${valueSet[22]}, ${valueSet[23]}, ${valueSet[24]},
-              ${valueSet[25]}, ${valueSet[26]}, ${valueSet[27]}, ${valueSet[28]}, ${valueSet[29]},
-              ${valueSet[30]}, ${valueSet[31]}, ${valueSet[32]}, ${valueSet[33]}, ${valueSet[34]},
-              ${valueSet[35]}, ${valueSet[36]}, ${valueSet[37]}, ${valueSet[38]}, ${valueSet[39]}
-            )
-          `;
-        }
+        // Execute bulk insert
+        await sql.query(`
+          INSERT INTO rsr_inventory (
+            rsr_stock_number, upc_code, description, department_number, manufacturer_id,
+            manufacturer_name, price, retail_price, quantity_on_hand, weight,
+            length, width, height, image_url, category, subcategory, model, caliber,
+            capacity, action, barrel_length, finish, stock, sights, safety_features,
+            accessories, warranty, country_of_origin, federal_excise_tax, shipping_weight,
+            shipping_length, shipping_width, shipping_height, hazmat, free_shipping,
+            drop_ship, allocation, new_item, closeout, last_updated
+          )
+          VALUES ${values}
+        `, flatValues);
         
         savedCount += batch.length;
         console.log(`Saved batch ${Math.ceil((i + batchSize) / batchSize)} - ${savedCount}/${items.length} items`);
